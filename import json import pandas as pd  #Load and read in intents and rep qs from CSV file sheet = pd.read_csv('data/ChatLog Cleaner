@@ -1,0 +1,65 @@
+#Imports
+import pandas as pd
+import re
+import csv
+
+#Load Data
+wildcards = pd.read_csv('data/homedepot222wildcards.csv', dtype = str)
+
+prods = wildcards['home_depot_product'].astype(str).values.tolist()
+appls = wildcards['home_depot_appliances'].astype(str).values.tolist()
+mods = wildcards['home_depot_model'].values.tolist()
+
+utts = pd.read_csv('data/Product Info Clean Up.csv')
+#Sort Wildcard List Longest to Shortest
+#This ensures full names are scanned for first before key words are extracted
+
+#Gets rid of 'nan' elements
+prods = [ele for ele in prods if ele != 'nan']
+appls = [ele for ele in appls if ele != 'nan']
+mods = [ele for ele in appls if ele != 'nan']
+
+#Sorts by length
+prods = sorted(prods, key = len, reverse = True)
+appls = sorted(appls, key = len, reverse = True)
+appls = sorted(mods, key = len, reverse = True)
+
+#Find and Replace Appropriate WildCards
+def WCReplace (wcList, uttList):
+    newUttList = []
+    replaceCount = 0
+    print("!!!!!!")
+    #Iterate through each wildcard looking for matches in each utterance
+    for wildcard in wcList:
+        for rows in uttList:
+            utt = str(rows)
+
+            #Get a list of indexes for all matches in utt
+            ind = [match.start() for match in re.finditer(str(wildcard), utt)]
+            #Exclude if wildcard is not in utterance or if index + wildcard length is longer than utterance
+            matches = len(ind)
+
+            for i in range (matches):
+                #Exclude if wildcard is part of a larger word
+                if (len(str(wildcard)) + ind[i]) < len(str(utt)):
+                    if ((utt[ind[i] + len(str(wildcard))].isalpha() == 0) and (utt[ind[i] - 1].isalpha() == 0)):
+                        #Create new utterance with the product replaced with the wildcard
+                        utt = utt[0:ind[i]] + uttList[0] + utt[ind[i]+len(str(wildcard)):]
+                        #print("Original Utt: ", wildcard, ":", rows)
+                        #print("New Utt: ", newUtt)
+                        replaceCount += 1
+            newUttList.extend(utt)
+            print(utt)
+    return replaceCount, newUttList
+
+#size, queries = WCReplace(prods, utts['Original Utterances'])
+#print("Prod: ", size)
+size, queries = WCReplace(appls, utts['Original Utterances'])
+print("Appls: ", size)
+
+size, queries = WCReplace(mods, queries)
+print("Mods: ", size)
+
+with open('WCReplace.csv', 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(queries)
