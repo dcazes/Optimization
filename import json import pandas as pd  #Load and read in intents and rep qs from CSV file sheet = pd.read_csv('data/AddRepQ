@@ -1,0 +1,27 @@
+import json
+import pandas as pd
+
+#Load and read in intents and rep qs from CSV file
+sheet = pd.read_csv('data/Rep_Qs.csv', dtype = str)
+repqs = sheet['Rep Q'].astype(str).values.tolist()
+repInts = sheet['Intent'].astype(str).values.tolist()
+
+#Load and read in intents from JSON file
+with open("data/Intents.json", "r") as jsonFile:
+    data = json.load(jsonFile)
+    keyList = []
+for key, value in data['intents']['en'].items():
+    searchPhrase = value['searchPhraseGroup']
+    keyList.append(searchPhrase)
+
+matchCount = 0
+#Iterate through each intent found in JSON file
+for ints in keyList:
+    #print(ints)
+    for repInt in repInts:
+        if ints == repInt:
+            matchCount+=1
+#data["representativeQuestions"] = ""
+
+#with open("replayScript.json", "w") as jsonFile:
+#    json.dump(data, jsonFile)
